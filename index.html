@@ -1,283 +1,144 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>The Outsiders Thematic Quiz</title>
+  <title>Enhanced Snake Game</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      text-align: center;
       margin: 0;
-      padding: 20px;
+      background: #222;
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .hidden {
-      display: none;
-    }
-    .question {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-    .answers {
-      list-style: none;
-      padding: 0;
-    }
-    .answers li {
-      margin: 10px 0;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .progress-container {
-      width: 100%;
-      background: #ddd;
-      border-radius: 5px;
-      margin-bottom: 20px;
-    }
-    .progress-bar {
-      width: 0%;
-      height: 20px;
-      background: #4caf50;
-      border-radius: 5px;
-    }
-    .timer {
-      font-size: 18px;
-      margin-bottom: 20px;
-    }
-    .feedback {
-      font-size: 18px;
-      margin-top: 10px;
+    canvas {
+      display: block;
+      margin: 40px auto;
+      background: linear-gradient(45deg, #333, #555);
+      border: 2px solid #FFF;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #000;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="startScreen">
-      <h1>The Outsiders Thematic Quiz</h1>
-      <p>This quiz tests themes and ideas. It has many questions. It has a timer for each question. It gives explanations for answers. It shows a progress bar.</p>
-      <button id="startButton">Start Quiz</button>
-    </div>
-    <div id="quizScreen" class="hidden">
-      <div class="progress-container">
-        <div id="progressBar" class="progress-bar"></div>
-      </div>
-      <div id="timer" class="timer"></div>
-      <div id="questionContainer">
-        <div id="question" class="question"></div>
-        <ul id="answers" class="answers"></ul>
-      </div>
-      <div id="feedback" class="feedback"></div>
-      <button id="nextButton" class="hidden">Next</button>
-    </div>
-    <div id="resultScreen" class="hidden">
-      <h2>Your Score</h2>
-      <p id="score"></p>
-      <button id="restartButton">Restart Quiz</button>
-    </div>
-  </div>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
   <script>
-    const quizData = [
-      {
-        question: "What is a main theme in The Outsiders?",
-        answers: ["Friendship", "Technology", "Space travel", "Cooking"],
-        correct: 0,
-        explanation: "The book shows friendship and loyalty."
-      },
-      {
-        question: "What does the gang face in the book?",
-        answers: ["Class conflict", "Weather issues", "Robbery", "Sports"],
-        correct: 0,
-        explanation: "They face hard class differences."
-      },
-      {
-        question: "What value does Ponyboy show?",
-        answers: ["Loyalty", "Deceit", "Greed", "Laziness"],
-        correct: 0,
-        explanation: "Ponyboy shows loyalty to his friends."
-      },
-      {
-        question: "What does the book show about society?",
-        answers: ["Prejudice", "Modern art", "Programming", "Fast food"],
-        correct: 0,
-        explanation: "It shows how people judge each other."
-      },
-      {
-        question: "What does the novel use to show youth struggles?",
-        answers: ["Identity", "Architecture", "Physics", "History"],
-        correct: 0,
-        explanation: "It shows youth finding who they are."
-      },
-      {
-        question: "Which character struggles with identity?",
-        answers: ["Johnny", "Sodapop", "Dally", "Two-Bit"],
-        correct: 0,
-        explanation: "Johnny tries to understand who he is."
-      },
-      {
-        question: "Which theme is shown in the gang's conflict?",
-        answers: ["Violence", "Comedy", "Science", "Fashion"],
-        correct: 0,
-        explanation: "Violence is shown in the gang's fights."
-      },
-      {
-        question: "What does the setting show in The Outsiders?",
-        answers: ["Economic hardship", "Luxury", "Technology", "Modern art"],
-        correct: 0,
-        explanation: "The setting shows hard times and struggle."
-      },
-      {
-        question: "How does the novel portray family?",
-        answers: ["As chosen bonds", "As a duty", "As a business", "As a game"],
-        correct: 0,
-        explanation: "Family is shown as bonds that are chosen."
-      },
-      {
-        question: "What does Ponyboy learn about life?",
-        answers: ["Understanding differences", "Ignoring problems", "Following trends", "Avoiding work"],
-        correct: 0,
-        explanation: "He learns that knowing differences is important."
-      }
-    ];
-
-    let currentQuestion = 0;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const grid = 20;
+    let snake = [{ x: 200, y: 200 }];
+    let dx = grid;
+    let dy = 0;
+    let food = getFood();
     let score = 0;
-    let timerInterval;
-    let timeLeft = 15;
-    let selectedAnswer = null;
+    let gameSpeed = 100;
 
-    const startButton = document.getElementById('startButton');
-    const quizScreen = document.getElementById('quizScreen');
-    const startScreen = document.getElementById('startScreen');
-    const questionEl = document.getElementById('question');
-    const answersEl = document.getElementById('answers');
-    const nextButton = document.getElementById('nextButton');
-    const feedbackEl = document.getElementById('feedback');
-    const timerEl = document.getElementById('timer');
-    const progressBar = document.getElementById('progressBar');
-    const resultScreen = document.getElementById('resultScreen');
-    const scoreEl = document.getElementById('score');
-    const restartButton = document.getElementById('restartButton');
-
-    function startQuiz() {
-      startScreen.classList.add('hidden');
-      quizScreen.classList.remove('hidden');
-      currentQuestion = 0;
-      score = 0;
-      updateProgress();
-      showQuestion();
-      startTimer();
+    function getFood() {
+      const foodX = Math.floor(Math.random() * (canvas.width / grid)) * grid;
+      const foodY = Math.floor(Math.random() * (canvas.height / grid)) * grid;
+      return { x: foodX, y: foodY };
     }
 
-    function showQuestion() {
-      clearFeedback();
-      resetTimer();
-      const data = quizData[currentQuestion];
-      questionEl.textContent = data.question;
-      answersEl.innerHTML = '';
-      data.answers.forEach((answer, index) => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.textContent = answer;
-        btn.addEventListener('click', function() {
-          const buttons = answersEl.querySelectorAll('button');
-          buttons.forEach(b => b.style.backgroundColor = '');
-          selectedAnswer = index;
-          btn.style.backgroundColor = '#d3d3d3';
-        });
-        li.appendChild(btn);
-        answersEl.appendChild(li);
-      });
-      nextButton.classList.add('hidden');
-    }
+    function gameLoop() {
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
-    function startTimer() {
-      timeLeft = 15;
-      timerEl.textContent = "Time: " + timeLeft + " sec";
-      timerInterval = setInterval(function() {
-        timeLeft--;
-        timerEl.textContent = "Time: " + timeLeft + " sec";
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          autoSubmit();
-        }
-      }, 1000);
-    }
-
-    function resetTimer() {
-      clearInterval(timerInterval);
-      timeLeft = 15;
-      timerEl.textContent = "Time: " + timeLeft + " sec";
-      startTimer();
-    }
-
-    function autoSubmit() {
-      if (selectedAnswer === null) {
-        selectedAnswer = -1;
+      if (head.x < 0 || head.x >= canvas.width ||
+          head.y < 0 || head.y >= canvas.height ||
+          hitSnake(head)) {
+        resetGame();
+        return;
       }
-      checkAnswer();
-    }
 
-    function checkAnswer() {
-      clearInterval(timerInterval);
-      const data = quizData[currentQuestion];
-      if (selectedAnswer === data.correct) {
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
         score++;
-        feedbackEl.textContent = "Correct! " + data.explanation;
+        food = getFood();
+        gameSpeed = Math.max(50, 100 - Math.floor(score / 5) * 5);
       } else {
-        feedbackEl.textContent = "Wrong! " + data.explanation;
+        snake.pop();
       }
-      Array.from(answersEl.children).forEach((li, index) => {
-        const btn = li.querySelector('button');
-        if (index === data.correct) {
-          btn.style.backgroundColor = '#90ee90';
-        } else {
-          btn.style.backgroundColor = '#ffcccb';
+
+      draw();
+      setTimeout(gameLoop, gameSpeed);
+    }
+
+    function hitSnake(head) {
+      for (let i = 0; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          return true;
         }
-      });
-      nextButton.classList.remove('hidden');
+      }
+      return false;
     }
 
-    nextButton.addEventListener('click', function() {
-      selectedAnswer = null;
-      currentQuestion++;
-      updateProgress();
-      if (currentQuestion < quizData.length) {
-        showQuestion();
-      } else {
-        showResult();
+    function resetGame() {
+      snake = [{ x: 200, y: 200 }];
+      dx = grid;
+      dy = 0;
+      score = 0;
+      food = getFood();
+      gameSpeed = 100;
+      draw();
+      setTimeout(gameLoop, gameSpeed);
+    }
+
+    function drawRoundedRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.fillStyle = "#555";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < snake.length; i++) {
+        const segment = snake[i];
+        ctx.fillStyle = "#0F0";
+        drawRoundedRect(segment.x + 1, segment.y + 1, grid - 2, grid - 2, 4);
+      }
+
+      const gradient = ctx.createRadialGradient(
+        food.x + grid / 2, food.y + grid / 2, 2,
+        food.x + grid / 2, food.y + grid / 2, grid / 2
+      );
+      gradient.addColorStop(0, "#FFAAAA");
+      gradient.addColorStop(1, "#F00");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(food.x + 1, food.y + 1, grid - 2, grid - 2);
+
+      ctx.fillStyle = "#FFF";
+      ctx.font = "bold 18px Arial";
+      ctx.fillText("Score: " + score, 10, 25);
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "ArrowUp" && dy === 0) {
+        dx = 0;
+        dy = -grid;
+      } else if (e.key === "ArrowDown" && dy === 0) {
+        dx = 0;
+        dy = grid;
+      } else if (e.key === "ArrowLeft" && dx === 0) {
+        dx = -grid;
+        dy = 0;
+      } else if (e.key === "ArrowRight" && dx === 0) {
+        dx = grid;
+        dy = 0;
       }
     });
 
-    function clearFeedback() {
-      feedbackEl.textContent = "";
-    }
-
-    function updateProgress() {
-      const progress = (currentQuestion / quizData.length) * 100;
-      progressBar.style.width = progress + "%";
-    }
-
-    function showResult() {
-      quizScreen.classList.add('hidden');
-      resultScreen.classList.remove('hidden');
-      scoreEl.textContent = score + " out of " + quizData.length;
-    }
-
-    restartButton.addEventListener('click', function() {
-      resultScreen.classList.add('hidden');
-      startScreen.classList.remove('hidden');
-    });
-
-    startButton.addEventListener('click', startQuiz);
+    setTimeout(gameLoop, gameSpeed);
   </script>
 </body>
 </html>
+```
