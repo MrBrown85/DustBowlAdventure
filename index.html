@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dust Bowl Adventure: A Historical Journey</title>
+  <title>Historical Journey: The Dust Bowl and Depression</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -20,6 +20,16 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 0 8px rgba(0,0,0,0.15);
+    }
+    h2, h3 {
+      margin-top: 0;
+    }
+    input[type="text"], select {
+      padding: 10px;
+      font-size: 18px;
+      width: 100%;
+      margin-bottom: 15px;
+      box-sizing: border-box;
     }
     button {
       margin: 8px 5px 8px 0;
@@ -53,372 +63,358 @@
       font-style: italic;
       white-space: pre-line;
     }
-    input[type="text"], select {
-      padding: 10px;
-      font-size: 18px;
-      width: 100%;
-      margin-bottom: 15px;
-      box-sizing: border-box;
-    }
-    h2 {
-      font-size: 24px;
-      margin-bottom: 15px;
-    }
-    h3 {
-      font-size: 22px;
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
   <div id="game"></div>
   <script>
-    // Global variables for player identity, navigation history, and transcript.
+    // Global variables for player's name, role, navigation path, and transcript.
     let playerName = "";
     let playerRole = "";
-    let pathStack = [];  // Stack of node IDs for back navigation.
-    let transcript = []; // Full transcript of the journey.
+    let pathStack = [];  // Array of node IDs (for Back navigation)
+    let transcript = []; // Array to store the full transcript text.
 
-    // Replace placeholders {name} and {role} in text.
+    // Utility: Replace placeholders in text.
     function parseText(text) {
       return text.replace(/{name}/g, playerName).replace(/{role}/g, playerRole);
     }
 
-    // Story nodes with clear, textbook-like narrative and factual information.
+    // Story nodes. Each node has a "text" (narrative with historical facts)
+    // and an array of "choices" (each with a "text" and "next" node id).
+    // Nodes marked with final: true will display the transcript.
     const storyNodes = {
       "start": {
-        text: "It is the fall of 1935. The American heartland has been severely affected by the Dust Bowl and the Great Depression. You, {name} the {role}, stand on land that once produced abundant crops. Due to poor farming practices and a long drought, the soil is now dry and full of dust. Historians explain that the Dust Bowl was caused by both natural weather patterns and unsustainable agriculture. Your choice now is whether to remain on your farm and try to restore the land, or to move to the city where opportunities might be available.",
+        text: "It is the autumn of 1935. The American Midwest is in crisis. The Dust Bowl—a period of severe dust storms and soil erosion—has devastated the farmlands. At the same time, the Great Depression has left millions struggling to survive. You, {name} the {role}, stand at a crossroads. Your family’s farm, once a symbol of prosperity, now lies cracked and barren. Historians explain that poor farming practices combined with a prolonged drought caused this environmental disaster. Your decision now will determine your future: do you remain on the land to attempt a revival, or do you seek a fresh start in the city?",
         choices: [
-          { text: "Stay on the farm", next: "stay_farm" },
-          { text: "Head to the city", next: "city_intro" }
+          { text: "Stay on the farm", next: "stayFarm" },
+          { text: "Move to the city", next: "cityIntro" }
         ]
       },
-      "stay_farm": {
-        text: "You decide to stay on the family farm. As you walk through the fields, you see cracked earth where crops once grew. This damage happened because farmers did not use methods such as crop rotation or soil conservation. Later, new government programs would help improve these practices. Now, you must decide how to move forward on the farm.",
+      "stayFarm": {
+        text: "You decide to stay on the farm. As you walk among the dry, cracked fields, you recall textbook lessons about how a lack of crop rotation and soil conservation led to massive erosion. Farmers later learned that new techniques such as contour plowing could help restore fertility. Now, you must choose your strategy to revive the land.",
         choices: [
-          { text: "Try to save what crops remain", next: "salvage_crops" },
-          { text: "Save your resources and wait", next: "conserve_resources" }
+          { text: "Try to salvage the remaining crops", next: "salvageCrops" },
+          { text: "Conserve your resources and wait", next: "conserveResources" }
         ]
       },
-      "salvage_crops": {
-        text: "You work hard to gather the remaining crops from the field. Although the harvest is small, it shows that some life still remains in the soil. Farmers during the Dust Bowl often risked everything to save their crops, and this effort represents hope for the future.",
+      "salvageCrops": {
+        text: "Braving the swirling dust, you work to gather the last of your crops. Although the harvest is small, it represents a spark of hope. During the Dust Bowl, many farmers risked everything to salvage their livelihoods. Your effort mirrors these brave attempts, reminding us that even in hardship, there is a chance for renewal.",
         choices: [
-          { text: "Sell your crops at the local market", next: "sell_crops" },
-          { text: "Use the crops to feed your family", next: "feed_family" }
+          { text: "Sell the harvest at the local market", next: "sellCrops" },
+          { text: "Use the crops to feed your family", next: "feedFamily" }
         ]
       },
-      "conserve_resources": {
-        text: "You choose to conserve your limited resources, knowing that every bit of food, water, and fuel is important. During the Great Depression, many families learned to live with very little. This careful management of resources was essential for survival and later influenced government programs aimed at stabilizing the economy.",
+      "conserveResources": {
+        text: "You decide that patience is key. By conserving food, water, and fuel, you mirror the survival strategies taught during the Great Depression. Families learned to stretch their resources during hard times. Meanwhile, new government programs would later promote better farming methods. With limited means, you must choose your next step carefully.",
         choices: [
-          { text: "Try new farming methods", next: "invest_techniques" },
-          { text: "Visit a nearby town for help", next: "seek_assistance" }
+          { text: "Experiment with new farming techniques", next: "investTechniques" },
+          { text: "Visit a nearby town to get advice", next: "seekAssistance" }
         ]
       },
-      "sell_crops": {
-        text: "At the market, you sell your small harvest. The low prices reflect the severe drop in crop values during the Depression. Even though you earn only a little money, every coin is valuable. This situation helped many farmers later to think of new ways to support themselves.",
+      "sellCrops": {
+        text: "At the local market, you sell your modest harvest. The low prices reflect the harsh economic reality of the Depression when crop values plummeted. Despite the meager earnings, each coin is hard-won. This experience reinforces the lesson that economic hardship forced many farmers to rethink their methods and livelihoods.",
         choices: [
-          { text: "Return to the farm to keep working", next: "return_farm" },
-          { text: "Save money and move to the city", next: "save_money_city" }
+          { text: "Return to the farm to continue working", next: "returnFarm" },
+          { text: "Save your money and consider moving to the city", next: "saveMoneyCity" }
         ]
       },
-      "feed_family": {
-        text: "You decide to use your harvest to feed your family. Sharing a meal during these hard times was an important part of surviving the Depression. Communities often came together to support one another when food was scarce.",
+      "feedFamily": {
+        text: "You choose to use your crops to feed your family. Sharing meals was a crucial part of surviving the Depression, and community support often helped families through the worst times. This decision, though difficult, underscores the importance of family and perseverance during crisis.",
         choices: [
-          { text: "Look for more food in the wild", next: "find_food" },
-          { text: "Travel to barter for supplies", next: "barter_journey" }
+          { text: "Forage for more food in the wild", next: "findFood" },
+          { text: "Travel to barter for additional supplies", next: "barterJourney" }
         ]
       },
-      "invest_techniques": {
-        text: "You invest in new farming methods such as crop rotation and contour plowing. These methods were later recognized as ways to prevent soil erosion and restore the land. Many farmers began to use these techniques after the lessons of the Dust Bowl were learned.",
+      "investTechniques": {
+        text: "You invest your limited resources in experimenting with new farming methods, such as crop rotation and contour plowing. These techniques, which later became standard practices, were developed in response to the disasters of the Dust Bowl. Your efforts here are a practical application of the lessons learned by agricultural scientists in the 1930s.",
         choices: [
-          { text: "Work hard on the farm", next: "farm_success" },
-          { text: "Consider moving to the city", next: "city_intro" }
+          { text: "Work hard to restore the farm", next: "farmSuccess" },
+          { text: "Decide that the city might offer a better future", next: "cityIntro" }
         ]
       },
-      "seek_assistance": {
-        text: "You travel to a nearby town and meet other people facing similar hardships. In many communities, farmers formed cooperatives to share ideas and resources. This support helped them overcome the challenges of the Depression. With new knowledge and community support, you return to your farm.",
+      "seekAssistance": {
+        text: "You travel to a nearby town, where you meet other farmers and community members who share their experiences. During the Depression, many locals formed cooperatives and mutual aid groups to survive together. This exchange of ideas gives you valuable insight into alternative farming methods and community support.",
         choices: [
-          { text: "Join a local cooperative", next: "join_cooperative" },
-          { text: "Return to your farm with fresh ideas", next: "return_farm" }
+          { text: "Join a local cooperative", next: "joinCooperative" },
+          { text: "Return to your farm with new ideas", next: "returnFarm" }
         ]
       },
-      "return_farm": {
-        text: "Back on your farm, you resume your work with renewed determination. Every effort you make is based on lessons learned from the past. Historians note that the struggles of farmers during the Dust Bowl led to major changes in farming practices and government policies.",
+      "returnFarm": {
+        text: "Back on your farm, you resume your efforts with renewed determination. Each furrow you plow and each seed you plant is a step toward recovery. The lessons of the Dust Bowl eventually led to reforms that improved agricultural practices nationwide. Your story is now part of that larger historical narrative.",
         choices: [
-          { text: "Keep working hard on the land", next: "farm_success" },
-          { text: "Consider that the city might offer better prospects", next: "city_intro" }
+          { text: "Continue working hard on the land", next: "farmSuccess" },
+          { text: "Consider that the city may offer better opportunities", next: "cityIntro" }
         ]
       },
-      "save_money_city": {
-        text: "You start saving your money carefully, planning for a possible move to the city. Although the city offers new opportunities, it also comes with challenges such as overcrowding and unemployment. Many families left the rural areas in search of better lives, even though the urban environment was difficult.",
+      "saveMoneyCity": {
+        text: "You begin saving every coin you earn, planning for a possible move to the city. Many families left the rural areas during the Depression in search of new opportunities, even though urban life was also challenging. Saving money becomes a symbol of hope for a brighter future.",
         choices: [
-          { text: "Stay on the farm to save more", next: "wait_farm" },
-          { text: "Use your savings and go to the city", next: "city_intro" }
+          { text: "Stay on the farm a bit longer to save more", next: "waitFarm" },
+          { text: "Use your savings and move to the city", next: "cityIntro" }
         ]
       },
-      "find_food": {
-        text: "You search the surrounding countryside and find wild plants and berries that can help supplement your family’s meals. Foraging was an important survival skill during the Dust Bowl when traditional crops failed.",
+      "findFood": {
+        text: "You search the surrounding fields and woods for wild edibles. Foraging became an essential survival skill during the Dust Bowl when traditional crops failed. The discovery of natural food sources reinforces the idea that nature can still provide, even in the harshest conditions.",
         choices: [
-          { text: "Return to your farm with the food", next: "return_farm" },
-          { text: "Share the food with your neighbors", next: "share_food" }
+          { text: "Return to your farm with the food", next: "returnFarm" },
+          { text: "Share the food with your neighbors", next: "shareFood" }
         ]
       },
-      "barter_journey": {
-        text: "You decide to travel and barter for essential supplies. With little cash available, exchanging goods became a common practice during the Depression. This barter system helped many families survive and even build new networks for support.",
+      "barterJourney": {
+        text: "Deciding that money is scarce, you set out to barter for necessary supplies. During the Great Depression, exchanging goods was common when cash was in short supply. This system of trade helped many families survive and even build new relationships in their communities.",
         choices: [
-          { text: "Return home with the supplies", next: "return_farm" },
-          { text: "Set up a small trade route with other farmers", next: "trade_route" }
+          { text: "Return home with the supplies", next: "returnFarm" },
+          { text: "Establish a small local trade route", next: "tradeRoute" }
         ]
       },
-      "farm_success": {
-        text: "Your hard work on the farm begins to pay off. The damaged land shows signs of recovery as you use both traditional methods and new techniques. This slow recovery mirrors the larger agricultural reforms that would later be supported by government programs. Your efforts serve as a model of determination and adaptability.",
+      "farmSuccess": {
+        text: "Slowly, your hard work begins to pay off. The once barren fields show signs of recovery as new farming techniques help restore the soil. Your progress mirrors the gradual improvements that came about through both community effort and government programs during the New Deal. Your persistence is a powerful lesson in how innovation and determination can overcome even the worst challenges.",
         choices: [
-          { text: "Continue working on the land", next: "farm_success" },
-          { text: "Expand your farm to try new ideas", next: "expand_farm" },
-          { text: "Test your prospects in the city", next: "city_intro" }
+          { text: "Continue improving the farm", next: "farmSuccess" },
+          { text: "Try expanding your farm with new ideas", next: "expandFarm" },
+          { text: "Consider moving to the city", next: "cityIntro" }
         ]
       },
-      "join_cooperative": {
-        text: "You decide to join a cooperative of local farmers. By sharing ideas, tools, and labor, you and your neighbors work together to improve your farms. This cooperative effort is an early example of community-based solutions that later helped shape national policies.",
+      "joinCooperative": {
+        text: "You join a local cooperative of farmers. Working together, you share resources, ideas, and labor. Cooperatives like these were an important part of how communities survived the Depression. The sense of unity and shared purpose gives you strength for the challenges ahead.",
         choices: [
-          { text: "Work on communal farming projects", next: "communal_farming" },
-          { text: "After a while, return to managing your own farm", next: "return_farm" }
+          { text: "Work on communal farming projects", next: "communalFarming" },
+          { text: "After gaining experience, return to manage your own farm", next: "returnFarm" }
         ]
       },
-      "communal_farming": {
-        text: "Working together on a communal plot of land, you and your neighbors learn that cooperation can lead to better results than working alone. The shared success of communal farming is a lesson in how community action can overcome even the toughest challenges.",
+      "communalFarming": {
+        text: "In the cooperative, you work side by side with your neighbors on a shared plot of land. The combined effort produces better results than working alone. This collaborative spirit is often highlighted in textbooks as a key factor in the eventual recovery of rural America.",
         choices: [
-          { text: "Celebrate your shared success", next: "ending_success" },
-          { text: "Plan further improvements for the community", next: "invest_wisely" }
+          { text: "Celebrate the community's success", next: "endingSuccess" },
+          { text: "Plan for further community improvements", next: "investWisely" }
         ]
       },
-      "expand_farm": {
-        text: "With cautious optimism, you decide to expand your farm. You begin to raise livestock and experiment with different types of crops. This mixed approach is later recognized as a sound method to reduce risk and improve food production. Your farm now reflects both traditional practices and new ideas.",
+      "expandFarm": {
+        text: "With a desire to innovate, you decide to expand your farm. You add livestock and experiment with a variety of crops. This mixed approach helps reduce risk and is now recognized as a cornerstone of sustainable agriculture. Your farm begins to reflect both the old ways and the new methods learned from past mistakes.",
         choices: [
           { text: "Focus on raising livestock", next: "livestock" },
-          { text: "Experiment with a variety of crops", next: "diverse_crops" }
+          { text: "Experiment with growing diverse crops", next: "diverseCrops" }
         ]
       },
-      "wait_farm": {
-        text: "You remain on your farm, patiently waiting for rain to return and revive the soil. The long, dry days remind you that the drought was one of the major causes of the Dust Bowl. This waiting period also led to the development of new water conservation methods in later years.",
+      "waitFarm": {
+        text: "You choose to remain on the farm a little longer, saving money and waiting for the weather to improve. The drought that caused the Dust Bowl also taught farmers the importance of water conservation. This waiting period, though difficult, is a necessary step toward eventual recovery.",
         choices: [
-          { text: "Continue to work on the land", next: "farm_success" },
-          { text: "Join a group of migrants looking for better land", next: "migrate" }
+          { text: "Keep working on the land", next: "farmSuccess" },
+          { text: "Join a group of migrants searching for better land", next: "migrate" }
         ]
       },
-      "trade_route": {
-        text: "You work on building a small local trade network with other farmers. In an economy where money was scarce, exchanging goods directly became very important. This barter system helped support families and fostered a sense of community that was crucial during the Depression.",
+      "tradeRoute": {
+        text: "You begin to build a local trade network with other farmers. By exchanging goods directly, families were able to support one another when money was scarce. This barter system became an important part of the survival strategy during the Depression.",
         choices: [
-          { text: "Expand your trade network", next: "trade_growth" },
-          { text: "Return to focusing on your own farm", next: "farm_success" }
+          { text: "Expand your trade network further", next: "tradeGrowth" },
+          { text: "Focus on improving your own farm", next: "farmSuccess" }
         ]
       },
       "livestock": {
-        text: "You decide to focus on raising livestock. Animals provide a steady supply of food and products, and they become a valuable asset for trade. This method of farming would later be recognized as an important part of sustainable agriculture.",
+        text: "You focus on raising livestock. Animals provide meat, milk, and other valuable products. This strategy not only diversifies your income but also offers a more stable source of sustenance. Livestock rearing is now seen as a critical component of a balanced, sustainable farm.",
         choices: [
-          { text: "Build better shelters for your animals", next: "animal_shelters" },
-          { text: "Use your livestock to help with trade", next: "trade_route" }
+          { text: "Build better shelters for your animals", next: "animalShelters" },
+          { text: "Use your animals to help in barter trades", next: "tradeRoute" }
         ]
       },
-      "diverse_crops": {
-        text: "You experiment with growing a variety of crops. By planting different types, especially those that require less water, you try to reduce the risk of a complete crop failure. This approach is now considered a key part of sustainable farming and was one lesson learned from the Dust Bowl.",
+      "diverseCrops": {
+        text: "You experiment with growing a range of crops that are more resistant to drought. This diversified planting strategy reduces the risk of total failure and is now widely recognized as a key to sustainable farming. Your innovative approach brings hope to the struggling land.",
         choices: [
-          { text: "Keep experimenting with new crop combinations", next: "diverse_crops_success" },
-          { text: "Return to methods you know work well", next: "farm_success" }
+          { text: "Continue refining your methods", next: "diverseCropsSuccess" },
+          { text: "Return to the reliable methods of the past", next: "farmSuccess" }
         ]
       },
       "migrate": {
-        text: "With a heavy heart, you pack your few belongings and join a caravan of migrants searching for better land. Many families left their homes during the Dust Bowl in hope of a fresh start. This journey, though difficult, represents the spirit of determination that carried people through one of America’s toughest times.",
+        text: "With a heavy heart, you join a caravan of migrants leaving the harsh conditions of the Dust Bowl. Many families made this difficult journey in search of more fertile lands and new opportunities. Though the road ahead is uncertain, this migration is a powerful testament to the resilience of the human spirit.",
         choices: [
-          { text: "Press on despite the challenges", next: "migrant_success" },
-          { text: "Decide to return to your farm", next: "return_farm" }
+          { text: "Press on in search of a new home", next: "migrantSuccess" },
+          { text: "Decide to return to your farm", next: "returnFarm" }
         ]
       },
-      "trade_growth": {
-        text: "Your trade network grows, and you begin to see modest profits. This system of barter and exchange was essential when traditional money lost much of its value. It shows how communities could adapt and support each other in hard times.",
+      "tradeGrowth": {
+        text: "Your local trade network begins to flourish. The modest profits you earn show how communities adapted by relying on barter instead of cash. This system of exchange is a reminder of the innovative ways people found to support one another during the Depression.",
         choices: [
-          { text: "Use your network to gain more prosperity", next: "prosperity" },
-          { text: "Focus back on your own farm", next: "farm_success" }
+          { text: "Leverage your network for more prosperity", next: "prosperity" },
+          { text: "Focus back on your own farm", next: "farmSuccess" }
         ]
       },
-      "diverse_crops_success": {
-        text: "Your experiments with different crops pay off. The fields show signs of recovery as your innovative methods begin to work. This success is a clear example of how learning from past mistakes can lead to better farming practices, a lesson that would later influence modern agriculture.",
+      "diverseCropsSuccess": {
+        text: "Your experiments with diverse crops yield positive results. The once barren fields now show signs of life, and your innovative methods are beginning to work. This success is a clear lesson in how learning from past mistakes can lead to a brighter future in farming.",
         choices: [
-          { text: "Continue trying new methods", next: "diverse_crops_success" },
-          { text: "Return to the reliable methods of the past", next: "farm_success" }
+          { text: "Continue to innovate", next: "diverseCropsSuccess" },
+          { text: "Return to more traditional practices", next: "farmSuccess" }
         ]
       },
       "prosperity": {
-        text: "Slowly, a sense of prosperity begins to emerge. Your efforts, along with new government programs, help the local economy recover. This period marked the beginning of a long process that would eventually restore stability to the nation. Your journey is a clear example of how perseverance and smart choices can lead to improvement even in difficult times.",
+        text: "Gradually, you see a sign of prosperity emerging from the long struggle. Your efforts, combined with new government programs, have helped stabilize the local economy. This period of recovery is a turning point in history, showing that hard work and innovation can lead to a better future.",
         choices: [
-          { text: "Invest your gains for a secure future", next: "invest_wisely" },
-          { text: "Expand your trade network further", next: "trade_growth" }
+          { text: "Invest your gains in future improvements", next: "investWisely" },
+          { text: "Expand your trade network further", next: "tradeGrowth" }
         ]
       },
-      "animal_shelters": {
-        text: "By building better shelters for your animals, you see an improvement in their health and productivity. This practical step is one of many changes that helped farmers learn how to work with nature rather than against it.",
+      "animalShelters": {
+        text: "By constructing sturdier shelters for your animals, you notice a marked improvement in their health and productivity. This practical step is one of many changes that helped farmers learn to work in harmony with nature. Your actions here reflect a broader shift toward sustainable agricultural practices.",
         choices: [
-          { text: "Expand your livestock operation", next: "livestock_success" },
-          { text: "Try diversifying your farm again", next: "diverse_crops" }
+          { text: "Expand your livestock operations", next: "livestockSuccess" },
+          { text: "Consider diversifying your farm again", next: "diverseCrops" }
         ]
       },
-      "livestock_success": {
-        text: "Your livestock operation becomes a stable part of your farm. The steady supply of food and trade goods shows how important livestock can be to a sustainable farming system. Your success is an example of how adapting to new methods can lead to long-term stability.",
+      "livestockSuccess": {
+        text: "Your livestock operation becomes a dependable part of your farm’s income. The steady production of food and trade goods demonstrates the benefits of diversifying your farming methods. Your success is a testament to the resilience and adaptability that helped many survive the Depression.",
         choices: [
-          { text: "Invest in community projects", next: "community_build" },
-          { text: "Expand your business further", next: "invest_wisely" }
+          { text: "Invest in community projects", next: "communityBuild" },
+          { text: "Push for further expansion", next: "investWisely" }
         ]
       },
-      "invest_wisely": {
-        text: "You decide to invest your savings in local projects and small businesses. This approach was a key part of the New Deal, which helped rebuild the economy by supporting community growth. Your wise investments help secure not only your future but also contribute to the recovery of your region.",
+      "investWisely": {
+        text: "You decide to invest your resources wisely by supporting local projects and small businesses. This approach reflects the spirit of the New Deal, which helped rebuild communities by encouraging local growth and economic stability. Your smart investments not only secure your future but also contribute to the recovery of the region.",
         choices: [
-          { text: "Keep investing for a better future", next: "invest_wisely" },
-          { text: "Strengthen community ties", next: "community_build" }
+          { text: "Continue investing for future gains", next: "investWisely" },
+          { text: "Strengthen community bonds", next: "communityBuild" }
         ]
       },
-      "community_build": {
-        text: "Working with your neighbors, you build a strong and supportive community. The cooperative spirit that develops helps everyone survive and eventually thrive. Historians later point to these community efforts as an important part of the recovery from the Great Depression.",
+      "communityBuild": {
+        text: "Working together with your neighbors, you build a strong, supportive community. This cooperation is recognized by historians as one of the key factors that helped America recover from the Great Depression. Your community’s success is a powerful reminder of what can be achieved when people unite for a common goal.",
         choices: [
-          { text: "Celebrate your community's success", next: "ending_success" },
-          { text: "Plan for further community improvements", next: "invest_wisely" }
+          { text: "Celebrate your community's success", next: "endingSuccess" },
+          { text: "Plan further improvements together", next: "investWisely" }
         ]
       },
-      "ending_success": {
-        text: "Your journey through the Dust Bowl and the Great Depression ends in success. As {name} the {role}, you have worked hard to restore the land and build a better future. Your story shows how practical changes in farming, strong community support, and perseverance can overcome even the toughest challenges. This record of your journey is an important lesson in history.",
+      "endingSuccess": {
+        text: "Your journey through the Dust Bowl and the Great Depression concludes with success. As {name} the {role}, you have faced adversity and emerged stronger by applying new ideas, working hard, and uniting with your community. Your story, full of practical lessons and historical insights, stands as an example of resilience and progress.",
         choices: [
-          { text: "View Your Full Journey Transcript", next: "transcript_view" }
+          { text: "View Your Full Journey Transcript", next: "transcriptView" }
         ],
         final: true
       },
-      "share_food": {
-        text: "In an act of kindness, you share your gathered food with neighbors who are struggling as well. This simple gesture reflects the strong sense of community that helped many families survive the harsh conditions of the Depression.",
+      "shareFood": {
+        text: "In a generous act, you share your gathered food with neighbors who are struggling. This kindness, common during the Depression, helped build the strong community spirit that enabled many to survive difficult times.",
         choices: [
-          { text: "Return to your farm with hope", next: "return_farm" },
-          { text: "Help build a community garden", next: "community_build" }
+          { text: "Return to your farm with hope", next: "returnFarm" },
+          { text: "Help establish a community garden", next: "communityBuild" }
         ]
       },
       // City branch nodes
-      "city_intro": {
-        text: "You arrive in a large city where crowded streets and busy markets mix with hardship. The city during the Great Depression was a place of both challenge and opportunity. Many people left the countryside hoping for work and a fresh start, even though urban life came with its own set of problems such as unemployment and overcrowding.",
+      "cityIntro": {
+        text: "You arrive in a bustling city where the promise of new opportunities is mixed with the harsh realities of urban life. The city during the Great Depression was marked by crowded streets, high unemployment, and fierce competition. Yet many people came here seeking work and a fresh start. The urban experience, though challenging, also offered the chance to learn new skills and join movements that fought for workers’ rights.",
         choices: [
-          { text: "Take any available labor job", next: "laborer" },
-          { text: "Get involved in political activism", next: "activism" },
-          { text: "Start a small business", next: "small_business" }
+          { text: "Take on a labor job", next: "laborer" },
+          { text: "Get involved in activism", next: "activism" },
+          { text: "Start a small business", next: "smallBusiness" }
         ]
       },
       "laborer": {
-        text: "You take a job as a laborer, working long hours for very little pay. The difficult working conditions in the city led many workers to organize unions and demand better treatment. Your experience is similar to that of countless others who struggled to make ends meet during the Depression.",
+        text: "You begin working as a laborer in the city. Long hours, low pay, and difficult working conditions are the norm. This experience teaches you firsthand how the hardships of the Depression spurred the formation of unions and the fight for better wages and working conditions.",
         choices: [
-          { text: "Save money to one day start your own business", next: "save_money_city" },
-          { text: "Join a union to fight for better wages", next: "union_join" }
+          { text: "Save money for your future", next: "saveMoneyCity" },
+          { text: "Join a union to demand better rights", next: "unionJoin" }
         ]
       },
       "activism": {
-        text: "Motivated by a strong sense of justice, you become involved in political activism. You join protests and community meetings to demand better living conditions and fair treatment. This activism played an important role in the reforms of the New Deal, which improved working conditions for many Americans.",
+        text: "Motivated by a sense of justice, you become involved in political activism. You join protests and community meetings to demand improvements in living and working conditions. This activism played a significant role in the reforms that were later enacted as part of the New Deal.",
         choices: [
-          { text: "Organize a large protest", next: "protest" },
-          { text: "Help build local community support", next: "grassroots" }
+          { text: "Organize a public protest", next: "protest" },
+          { text: "Help build grassroots support in your community", next: "grassroots" }
         ]
       },
-      "small_business": {
-        text: "Using your savings, you open a small business in the city. Even though consumer spending is low, you work hard to provide a needed service or product. Your venture is an example of the entrepreneurial spirit that emerged even in tough times.",
+      "smallBusiness": {
+        text: "With your savings, you open a small business in the city. Though the economic climate is harsh, your venture represents the entrepreneurial spirit that emerged during the Depression. Running a business in these times required careful planning, innovation, and a willingness to take risks.",
         choices: [
-          { text: "Innovate to make your business stand out", next: "business_innovation" },
-          { text: "Cut costs to keep your business running", next: "business_cut" }
+          { text: "Focus on innovative ideas to attract customers", next: "businessInnovation" },
+          { text: "Adopt cost-saving measures to survive", next: "businessCut" }
         ]
       },
-      "save_money_city": {
-        text: "You work diligently as a laborer, saving every penny in hopes of a better future. The discipline you show is similar to that of many who struggled in the city, where every dollar mattered. Your savings represent both hope and hard work.",
+      "saveMoneyCity": {
+        text: "You work hard as a laborer, saving every dollar you can. The discipline and perseverance required to save money in the midst of urban hardship is a lesson in itself. Many during the Depression lived by saving what little they earned, hoping for a better future.",
         choices: [
-          { text: "Continue working and saving", next: "laborer" },
-          { text: "Invest your savings in a new business opportunity", next: "small_business" }
+          { text: "Keep working and saving", next: "laborer" },
+          { text: "Invest your savings in a business opportunity", next: "smallBusiness" }
         ]
       },
-      "union_join": {
-        text: "You join a union to help secure fair wages and better working conditions for all. The union was a powerful tool during the Depression and played a key role in the improvements made under the New Deal. Your membership is part of a larger movement for workers' rights.",
+      "unionJoin": {
+        text: "You join a union to help fight for fair wages and improved working conditions. The union movement was a crucial force in the Depression era, leading to significant labor reforms. Your involvement shows the power of collective action.",
         choices: [
-          { text: "Take on a leadership role", next: "union_leader" },
+          { text: "Take on a leadership role in the union", next: "unionLeader" },
           { text: "Focus on your job and savings", next: "laborer" }
         ]
       },
       "protest": {
-        text: "You lead a protest in the city, where many gather to demand justice and change. The protests of the Depression era helped bring about important reforms in labor laws and social policies. Your efforts contribute to a movement that reshaped the nation.",
+        text: "You help organize a public protest. The protests of the 1930s were key in drawing attention to the struggles of workers and the unemployed. Your efforts contribute to a broader movement that eventually led to improved labor laws and social reforms.",
         choices: [
-          { text: "Channel your energy into union efforts", next: "union_join" },
-          { text: "Confront the authorities directly", next: "police_encounter" }
+          { text: "Support union efforts", next: "unionJoin" },
+          { text: "Continue protesting for change", next: "protest" }
         ]
       },
       "grassroots": {
-        text: "You work with local community groups to provide food, shelter, and support to those in need. These grassroots efforts were essential during the Depression and later helped inspire many New Deal programs. Your work makes a real difference in your community.",
+        text: "Working at the grassroots level, you join local community groups to help provide food and shelter to those in need. These efforts were critical in supporting many during the Depression and later inspired government relief programs.",
         choices: [
-          { text: "Form a local support group", next: "community_support" },
+          { text: "Form a local support group", next: "communitySupport" },
           { text: "Return to steady labor work", next: "laborer" }
         ]
       },
-      "business_innovation": {
-        text: "Your innovative ideas help your business stand out in a difficult market. This creativity is a testament to the resilience and resourcefulness of entrepreneurs during the Depression. Your success is one example of how innovation can drive change.",
+      "businessInnovation": {
+        text: "Your small business begins to stand out thanks to innovative ideas and quality service. In an environment of economic hardship, creativity was key to success. Your business becomes a symbol of hope and resilience in a difficult time.",
         choices: [
-          { text: "Expand your business", next: "business_growth" },
-          { text: "Keep your business small", next: "business_stable" }
+          { text: "Expand your business", next: "businessGrowth" },
+          { text: "Keep your business small and focused", next: "businessStable" }
         ]
       },
-      "business_cut": {
-        text: "By cutting costs, you manage to keep your business running even in a tough economy. This careful balance of quality and frugality was a constant challenge for many business owners during the Depression.",
+      "businessCut": {
+        text: "By focusing on cost-cutting measures, you manage to keep your business afloat. Although this approach limits growth, it is a practical way to survive in a tough economy. Many entrepreneurs during the Depression had to find a balance between quality and affordability.",
         choices: [
-          { text: "Invest in improving your product", next: "business_innovation" },
-          { text: "Continue with your cost-cutting strategy", next: "business_stable" }
+          { text: "Invest in improving your product", next: "businessInnovation" },
+          { text: "Continue with your cost-saving strategy", next: "businessStable" }
         ]
       },
-      "union_leader": {
-        text: "You rise as a leader in your union, helping to negotiate better wages and working conditions. Your leadership reflects the broader changes that occurred in labor laws during this time. Your actions contribute to the long-term improvement of workers’ rights.",
+      "unionLeader": {
+        text: "As a union leader, you help negotiate better wages and safer working conditions for your fellow workers. Your leadership is part of a movement that eventually resulted in significant labor reforms and improved quality of life for many.",
         choices: [
-          { text: "Continue leading the fight", next: "union_leader" },
-          { text: "Return to your personal job", next: "laborer" }
+          { text: "Continue leading the union", next: "unionLeader" },
+          { text: "Return to your personal work", next: "laborer" }
         ]
       },
-      "police_encounter": {
-        text: "A confrontation with the police forces you to rethink your approach to activism. Such encounters were common and highlighted the risks involved in demanding change. You decide to work quietly to rebuild community support.",
+      "communitySupport": {
+        text: "The support group you helped form becomes an essential part of the community. In a time when government aid was limited, local initiatives like yours provided a lifeline for many families. Your work at the grassroots level shows the importance of community action in times of crisis.",
         choices: [
-          { text: "Lay low and rebuild grassroots support", next: "grassroots" },
-          { text: "Continue activism in a more cautious way", next: "grassroots" }
+          { text: "Use the group to rebuild community life", next: "communityBuild" },
+          { text: "Return to your business to pursue individual success", next: "smallBusiness" }
         ]
       },
-      "community_support": {
-        text: "The support group you help form becomes a crucial resource for many people in the city. In a time when government help was limited, community efforts like these were vital. Your work in the support group shows how local action can make a difference.",
+      "businessGrowth": {
+        text: "Your business grows steadily, creating jobs and contributing to the local economy. This success is a beacon of hope during the Depression and demonstrates how innovation and hard work can bring about positive change.",
         choices: [
-          { text: "Use the group to rebuild the community", next: "community_build" },
-          { text: "Return to your business for personal success", next: "small_business" }
+          { text: "Hire more workers and expand further", next: "businessEmployment" },
+          { text: "Reinvest in your innovative strategies", next: "businessInnovation" }
         ]
       },
-      "business_growth": {
-        text: "Your business grows steadily, providing more jobs and a better service to your community. This growth is a sign of hope during a very difficult period, showing that even in a time of economic hardship, progress is possible.",
+      "businessStable": {
+        text: "Your business remains stable despite the economic challenges. Stability in such a difficult time is a victory in itself, and your careful management is a lesson in resilience and perseverance.",
         choices: [
-          { text: "Hire more workers and expand further", next: "business_employment" },
-          { text: "Reinvest in your business", next: "business_innovation" }
+          { text: "Explore new business ventures", next: "smallBusiness" },
+          { text: "Keep saving money for future changes", next: "saveMoneyCity" }
         ]
       },
-      "business_stable": {
-        text: "Your business remains a steady source of income in a challenging economic climate. Stability is a small victory during the Depression, and your careful management is a model of resilience.",
+      "businessEmployment": {
+        text: "By hiring additional workers, your business not only grows but also helps create jobs for others. This act of employment generation was a key part of the New Deal efforts to revive the economy, and your success serves as a model for community-driven progress.",
         choices: [
-          { text: "Explore new business ventures", next: "small_business" },
-          { text: "Keep saving money for future changes", next: "save_money_city" }
+          { text: "Invest in community projects", next: "communityBuild" },
+          { text: "Push for further expansion", next: "businessGrowth" }
         ]
       },
-      "business_employment": {
-        text: "By hiring additional workers, your business not only grows but also helps provide jobs for others. Job creation was a key part of the recovery during the Depression, and your efforts contribute to this larger effort.",
-        choices: [
-          { text: "Invest in your community", next: "community_build" },
-          { text: "Expand your business further", next: "business_growth" }
-        ]
+      // Final transcript display node.
+      "transcriptView": {
+        text: "Thank you for completing your journey. Below is the full transcript of your choices and the historical lessons learned along the way.",
+        choices: [],
+        final: true
       }
     };
 
-    // Render a node or a special screen with navigation.
+    // Function to render a node.
     function renderNode(nodeId, isBack = false) {
       const gameDiv = document.getElementById("game");
       gameDiv.innerHTML = "";
 
-      // Special handling for the identity selection screen.
+      // Special screen for identity selection.
       if (nodeId === "identity_select") {
         const header = document.createElement("h2");
         header.textContent = "Choose Your Identity";
@@ -442,7 +438,7 @@
         gameDiv.appendChild(roleSelect);
 
         const startBtn = document.createElement("button");
-        startBtn.textContent = "Start Your Adventure";
+        startBtn.textContent = "Start Your Journey";
         startBtn.addEventListener("click", () => {
           const nameVal = document.getElementById("playerName").value.trim();
           if (!nameVal) {
@@ -451,7 +447,7 @@
           }
           playerName = nameVal;
           playerRole = document.getElementById("playerRole").value;
-          // Initialize game state.
+          // Reset state and begin at the start node.
           pathStack = [];
           transcript = [];
           navigateTo("start");
@@ -460,22 +456,21 @@
         return;
       }
 
-      // Get the current node.
+      // Get current node.
       const node = storyNodes[nodeId];
       if (!isBack) {
         pathStack.push(nodeId);
         transcript.push(parseText(node.text));
       }
 
-      // Display the node text.
-      const nodeText = parseText(node.text);
+      // Display narrative text.
       const para = document.createElement("p");
       para.style.whiteSpace = "pre-line";
-      para.textContent = nodeText;
+      para.textContent = parseText(node.text);
       gameDiv.appendChild(para);
 
       // Render choice buttons.
-      if (node.choices) {
+      if (node.choices && node.choices.length > 0) {
         node.choices.forEach(choice => {
           const btn = document.createElement("button");
           btn.textContent = choice.text;
@@ -487,7 +482,7 @@
         });
       }
 
-      // Navigation buttons: Back and Restart.
+      // Navigation: Back and Restart.
       const navDiv = document.createElement("div");
       navDiv.className = "nav-buttons";
       if (pathStack.length > 1) {
@@ -502,13 +497,13 @@
       navDiv.appendChild(restartBtn);
       gameDiv.appendChild(navDiv);
 
-      // If this is a final node, display the full transcript.
+      // If node is final, display the transcript.
       if (node.final) {
         displayTranscript();
       }
     }
 
-    // Navigate to a new node.
+    // Navigate to a given node.
     function navigateTo(nodeId) {
       renderNode(nodeId);
     }
@@ -532,7 +527,7 @@
       renderNode("identity_select");
     }
 
-    // Display the full journey transcript.
+    // Display the full transcript at the end.
     function displayTranscript() {
       const gameDiv = document.getElementById("game");
       const transcriptDiv = document.createElement("div");
@@ -541,7 +536,7 @@
       gameDiv.appendChild(transcriptDiv);
     }
 
-    // Start with the identity selection screen.
+    // Begin with the identity selection screen.
     renderNode("identity_select");
   </script>
 </body>
