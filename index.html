@@ -1,177 +1,421 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Star Trek Asteroids Game</title>
+  <meta charset="UTF-8">
+  <title>Dust Bowl Adventure</title>
   <style>
     body {
-      margin: 0;
-      background: black;
-      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
     }
-    canvas {
+    #game {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .choice {
       display: block;
-      background: black;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <div id="game"></div>
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const ship = {
-      x: canvas.width / 2,
-      y: canvas.height / 2,
-      angle: 0,
-      speed: 0,
-      radius: 20,
-      bullets: []
+    // Story nodes: each node has text and a list of choices that point to other nodes.
+    const storyNodes = {
+      "start": {
+        text: "It is 1935, and the relentless dust storms have ravaged the heartland. You are a farmer struggling through the Great Depression in the Dust Bowl. With failing crops and dwindling hope, you face a critical choice: do you stay and fight for your land or head to the city in search of a new beginning?",
+        choices: [
+          { text: "Stay on the farm", next: "stay_farm" },
+          { text: "Head to the city", next: "city_intro" }
+        ]
+      },
+      "stay_farm": {
+        text: "Deciding to remain on your ancestral land, you inspect your barren fields and weathered homestead. The dust blurs your vision as you contemplate your next move.",
+        choices: [
+          { text: "Try to salvage your meager crops", next: "salvage_crops" },
+          { text: "Conserve your dwindling resources", next: "conserve_resources" }
+        ]
+      },
+      "salvage_crops": {
+        text: "Braving the swirling dust, you work tirelessly to rescue what little remains of your crops. The yield is meager, yet it's a small glimmer of hope.",
+        choices: [
+          { text: "Sell the meager harvest at the local market", next: "sell_crops" },
+          { text: "Use the harvest to feed your starving family", next: "feed_family" }
+        ]
+      },
+      "conserve_resources": {
+        text: "You decide to conserve every scrap of resource, waiting for a miracle amidst the harsh weather. The long, grueling days take their toll on both body and spirit.",
+        choices: [
+          { text: "Invest in new, experimental farming techniques", next: "invest_techniques" },
+          { text: "Travel to a nearby town to seek assistance", next: "seek_assistance" }
+        ]
+      },
+      "sell_crops": {
+        text: "At the dusty market, you sell your meager harvest. The coins are few, but they might buy you a few more days of survival.",
+        choices: [
+          { text: "Return to the farm and keep struggling", next: "return_farm" },
+          { text: "Save your money for a future move to the city", next: "save_money_city" }
+        ]
+      },
+      "feed_family": {
+        text: "Your family eats what little food you managed to gather, but the hunger lingers. You must now decide your next steps to secure sustenance.",
+        choices: [
+          { text: "Search the barren land for additional food sources", next: "find_food" },
+          { text: "Embark on a risky journey to barter for supplies", next: "barter_journey" }
+        ]
+      },
+      "invest_techniques": {
+        text: "You commit your limited resources to experimental farming methods. Some neighbors scoff at your innovation, but you hold onto hope.",
+        choices: [
+          { text: "Continue working diligently on the farm", next: "farm_success" },
+          { text: "Consider moving to the city for potentially better opportunities", next: "city_intro" }
+        ]
+      },
+      "seek_assistance": {
+        text: "You travel to a nearby town, seeking the aid and wisdom of others. The community is tight-knit but equally burdened by hardship.",
+        choices: [
+          { text: "Join a local cooperative of struggling farmers", next: "join_cooperative" },
+          { text: "Return home with new ideas to revive your farm", next: "return_home" }
+        ]
+      },
+      "return_farm": {
+        text: "Back at your farm, you redouble your efforts, determined to coax life from the parched soil—even as nature remains unyielding.",
+        choices: [
+          { text: "Persevere with renewed hope", next: "farm_success" },
+          { text: "Decide it's time to move to the city", next: "city_intro" }
+        ]
+      },
+      "save_money_city": {
+        text: "You begin saving every coin, planning for a future escape to the city where you hope fortunes may be kinder.",
+        choices: [
+          { text: "Wait longer on the farm to build more savings", next: "wait_farm" },
+          { text: "Use your savings and move to the city immediately", next: "city_intro" }
+        ]
+      },
+      "find_food": {
+        text: "You scour the desolate landscape in search of wild edibles. Luck smiles upon you, and you gather enough to stave off hunger for a while.",
+        choices: [
+          { text: "Return to your farm with the newfound supplies", next: "return_farm" },
+          { text: "Share your bounty with struggling neighbors", next: "share_food" }
+        ]
+      },
+      "barter_journey": {
+        text: "Your journey to barter is fraught with peril, but your determination wins out. You secure essential supplies through risky trades.",
+        choices: [
+          { text: "Head back home to use your supplies", next: "return_farm" },
+          { text: "Establish a small trade route with other farmers", next: "trade_route" }
+        ]
+      },
+      "farm_success": {
+        text: "Against all odds, your hard work begins to pay off. The farm shows slow signs of recovery, though challenges remain ever-present.",
+        choices: [
+          { text: "Continue to toil the land", next: "farm_success" },
+          { text: "Expand your homestead for greater opportunities", next: "expand_farm" },
+          { text: "Reconsider your urban prospects and move to the city", next: "city_intro" }
+        ]
+      },
+      "join_cooperative": {
+        text: "Within the cooperative, you find camaraderie and shared struggle. Together, you face the relentless hardships of the Dust Bowl.",
+        choices: [
+          { text: "Work on communal farming projects", next: "communal_farming" },
+          { text: "Venture out on your own once more", next: "return_home" }
+        ]
+      },
+      "communal_farming": {
+        text: "Working side by side with your neighbors, you cultivate a small, resilient plot of land. The shared effort brings hope to all.",
+        choices: [
+          { text: "Celebrate this small success", next: "community_build" },
+          { text: "Look for ways to improve your collective situation", next: "invest_wisely" }
+        ]
+      },
+      "return_home": {
+        text: "Armed with new insights and a spark of determination, you return home to implement the ideas gleaned from others.",
+        choices: [
+          { text: "Experiment with innovative farming techniques", next: "invest_techniques" },
+          { text: "Decide to move to the city for better prospects", next: "city_intro" }
+        ]
+      },
+      "wait_farm": {
+        text: "Days turn into weeks as you wait on the farm, clinging to the hope of a miraculous change in fortune.",
+        choices: [
+          { text: "Continue to persevere on your land", next: "farm_success" },
+          { text: "Join a group of migrants seeking a more promising future", next: "migrate" }
+        ]
+      },
+      "trade_route": {
+        text: "You begin establishing a modest network of trade with other beleaguered farmers. This risky venture could either be your salvation or downfall.",
+        choices: [
+          { text: "Invest further in expanding your trade network", next: "trade_growth" },
+          { text: "Return to focusing solely on your farm", next: "farm_success" }
+        ]
+      },
+      "expand_farm": {
+        text: "With cautious optimism, you invest in expanding your homestead, taking risks for potential long-term rewards.",
+        choices: [
+          { text: "Diversify by raising livestock", next: "livestock" },
+          { text: "Cultivate a variety of resilient crops", next: "diverse_crops" }
+        ]
+      },
+      "migrate": {
+        text: "You gather your few possessions and join a caravan of migrants heading for lands rumored to be more fertile. The journey is grueling and uncertain.",
+        choices: [
+          { text: "Press on despite the hardships", next: "migrant_success" },
+          { text: "Turn back and reconsider your choices", next: "return_farm" }
+        ]
+      },
+      "trade_growth": {
+        text: "Your trade network flourishes slowly, bringing in modest gains despite the ever-present threat of the dust storms.",
+        choices: [
+          { text: "Leverage your network for greater prosperity", next: "prosperity" },
+          { text: "Focus on improving your own farm", next: "farm_success" }
+        ]
+      },
+      "livestock": {
+        text: "You decide to diversify by raising livestock. The animals not only provide food but also a potential source of income.",
+        choices: [
+          { text: "Invest in building better shelters for your animals", next: "animal_shelters" },
+          { text: "Use your livestock as barter in trade routes", next: "trade_route" }
+        ]
+      },
+      "diverse_crops": {
+        text: "Experimenting with a variety of crops, you hope to find a combination that can withstand the harsh climate. Success is uncertain but vital.",
+        choices: [
+          { text: "Continue experimenting", next: "diverse_crops_success" },
+          { text: "Return to traditional, time-tested methods", next: "farm_success" }
+        ]
+      },
+      "migrant_success": {
+        text: "Against the backdrop of hardship, the new land shows promise. You help establish a small, sustainable community—a fresh start amid adversity.",
+        choices: [
+          { text: "Settle and build a new life", next: "new_life" },
+          { text: "Return to your old farm to assist others", next: "return_farm" }
+        ]
+      },
+      "prosperity": {
+        text: "Your perseverance begins to yield results, and a slow trickle of prosperity enters your life. Yet, the economic hardships of the Great Depression still loom.",
+        choices: [
+          { text: "Invest your gains wisely for the future", next: "invest_wisely" },
+          { text: "Reinvest in expanding your trade network", next: "trade_growth" }
+        ]
+      },
+      "animal_shelters": {
+        text: "Improved shelters lead to healthier livestock and a more stable source of income. Your risk is slowly paying off.",
+        choices: [
+          { text: "Expand your livestock operation further", next: "livestock_success" },
+          { text: "Consider diversifying once more", next: "diverse_crops" }
+        ]
+      },
+      "diverse_crops_success": {
+        text: "Your experimental crops defy the odds, thriving in the harsh conditions. This success boosts your confidence and secures your future.",
+        choices: [
+          { text: "Continue your innovative practices", next: "diverse_crops_success" },
+          { text: "Return to more reliable, traditional methods", next: "farm_success" }
+        ]
+      },
+      "new_life": {
+        text: "You settle in the new land, building a community from scratch. The promise of a better future fuels your determination.",
+        choices: [
+          { text: "Invest in building the community", next: "community_build" },
+          { text: "Focus on your personal prosperity", next: "invest_wisely" }
+        ]
+      },
+      "invest_wisely": {
+        text: "With careful planning, you invest your resources in a mix of local enterprises and community projects. The uncertain times begin to show signs of improvement.",
+        choices: [
+          { text: "Continue investing in your future", next: "invest_wisely" },
+          { text: "Reassess your priorities and strengthen community ties", next: "community_build" }
+        ]
+      },
+      "livestock_success": {
+        text: "Your livestock operation becomes a cornerstone of your local economy. The hard-won success is a testament to your resilience.",
+        choices: [
+          { text: "Focus on the welfare of your community", next: "community_build" },
+          { text: "Expand your operations even further", next: "invest_wisely" }
+        ]
+      },
+      "community_build": {
+        text: "Through collective effort and mutual support, you and your neighbors build a resilient community. The bonds forged in adversity shine as a beacon of hope.",
+        choices: [
+          { text: "Celebrate your hard-won success", next: "ending_success" },
+          { text: "Plan for further growth and improvement", next: "invest_wisely" }
+        ]
+      },
+      "ending_success": {
+        text: "Your journey through the trials of the Dust Bowl has been arduous and filled with sacrifice, yet your determination has ushered in a new era of hope and renewal. Your legacy endures in the thriving community you've built.",
+        choices: [
+          { text: "Play Again", next: "start" }
+        ]
+      },
+      "share_food": {
+        text: "You share your gathered food with your neighbors, fostering a sense of community and mutual support. This kindness might pave the way for future opportunities.",
+        choices: [
+          { text: "Return to your farm with renewed determination", next: "return_farm" },
+          { text: "Help establish a community garden", next: "community_build" }
+        ]
+      },
+      // City branch nodes
+      "city_intro": {
+        text: "Arriving in the bustling city, you are met with overcrowded streets and the ceaseless struggle for survival. Urban life during the Great Depression is as unforgiving as the Dust Bowl, yet it offers a chance for reinvention.",
+        choices: [
+          { text: "Seek work as a laborer", next: "laborer" },
+          { text: "Become involved in political activism", next: "activism" },
+          { text: "Open a small business", next: "small_business" }
+        ]
+      },
+      "laborer": {
+        text: "You take on any labor available, enduring long hours and meager pay. Every day is a battle for survival in the urban jungle.",
+        choices: [
+          { text: "Save money to eventually start your own venture", next: "save_money_city" },
+          { text: "Join a union to fight for better conditions", next: "union_join" }
+        ]
+      },
+      "activism": {
+        text: "Fueled by passion and despair, you dive into political activism, rallying workers and the oppressed to fight for their rights.",
+        choices: [
+          { text: "Organize a large protest", next: "protest" },
+          { text: "Build grassroots support within your community", next: "grassroots" }
+        ]
+      },
+      "small_business": {
+        text: "With a modest sum saved from your past struggles, you open a small business in the city. The competition is fierce and the margins thin, but you have nothing left to lose.",
+        choices: [
+          { text: "Innovate to make your business stand out", next: "business_innovation" },
+          { text: "Cut costs to keep the business afloat", next: "business_cut" }
+        ]
+      },
+      "union_join": {
+        text: "You join a burgeoning union that fights for fair wages and improved working conditions. The collective struggle gives you hope in these trying times.",
+        choices: [
+          { text: "Take on a leadership role within the union", next: "union_leader" },
+          { text: "Focus on your personal survival as a laborer", next: "laborer_return" }
+        ]
+      },
+      "protest": {
+        text: "Your organized protest draws the attention of both the public and the authorities. The streets reverberate with calls for change, but danger lurks at every corner.",
+        choices: [
+          { text: "Demand better working conditions through union efforts", next: "union_join" },
+          { text: "Confront the authorities head-on", next: "police_encounter" }
+        ]
+      },
+      "grassroots": {
+        text: "Working tirelessly to build community support, you establish networks that provide shelter, food, and hope. In the midst of despair, solidarity blooms.",
+        choices: [
+          { text: "Form a local support group", next: "community_support" },
+          { text: "Return to working as a laborer", next: "laborer" }
+        ]
+      },
+      "business_innovation": {
+        text: "Your innovative approach to business catches the eye of the local community. Slowly but surely, you carve out a niche in the competitive urban market.",
+        choices: [
+          { text: "Expand your business", next: "business_growth" },
+          { text: "Keep your business small and manageable", next: "business_stable" }
+        ]
+      },
+      "business_cut": {
+        text: "While cutting costs helps you keep the business running, it also compromises the quality of your product. The balance is precarious.",
+        choices: [
+          { text: "Invest in improving the quality of your offerings", next: "business_innovation" },
+          { text: "Accept the risks and continue as is", next: "business_stable" }
+        ]
+      },
+      "union_leader": {
+        text: "Taking on a leadership role within the union, you become a beacon of hope for your fellow workers. The weight of responsibility is immense, yet you press on.",
+        choices: [
+          { text: "Continue fighting for workers' rights", next: "union_leader" },
+          { text: "Step back to focus on your personal survival", next: "laborer_return" }
+        ]
+      },
+      "laborer_return": {
+        text: "Disillusioned but undeterred, you return to labor work. The struggle is unending, but you carry the lessons learned from activism.",
+        choices: [
+          { text: "Save money for a better future", next: "save_money_city" },
+          { text: "Rejoin the union fight with renewed determination", next: "union_join" }
+        ]
+      },
+      "police_encounter": {
+        text: "Your confrontation with the authorities turns dangerous. Forced to flee, you navigate the dark underbelly of the city, your future uncertain.",
+        choices: [
+          { text: "Lay low and rebuild grassroots support", next: "grassroots" },
+          { text: "Go underground and continue your activism in secret", next: "underground" }
+        ]
+      },
+      "community_support": {
+        text: "The support group you helped form provides shelter and sustenance to many. In these trying times, the power of community is undeniable.",
+        choices: [
+          { text: "Use this network as a foundation to rebuild society", next: "community_build" },
+          { text: "Pursue individual success by reopening your small business", next: "small_business" }
+        ]
+      },
+      "business_growth": {
+        text: "Your business experiences steady growth, earning a reputation for quality and innovation. Expansion, however, brings its own set of challenges.",
+        choices: [
+          { text: "Hire more workers to expand your operation", next: "business_employment" },
+          { text: "Invest further in your innovative methods", next: "business_innovation" }
+        ]
+      },
+      "business_stable": {
+        text: "Your business remains stable despite the harsh economic climate. It may not be thriving, but it provides a reliable livelihood.",
+        choices: [
+          { text: "Explore new ventures", next: "small_business" },
+          { text: "Save money to eventually change your circumstances", next: "save_money_city" }
+        ]
+      },
+      "business_employment": {
+        text: "By hiring additional workers, you not only expand your business but also uplift your community. The venture becomes a shared success.",
+        choices: [
+          { text: "Invest in the welfare of your employees", next: "community_build" },
+          { text: "Push for further expansion", next: "business_growth" }
+        ]
+      },
+      "underground": {
+        text: "Living on the fringes of society, you become part of a secret network of activists working against an oppressive system. Danger and hope walk hand in hand.",
+        choices: [
+          { text: "Plan a major uprising", next: "protest" },
+          { text: "Focus on protecting your underground network", next: "grassroots" }
+        ]
+      }
     };
 
-    const asteroids = [];
-    let keys = {};
-
-    function createAsteroid() {
-      const size = Math.random() * 30 + 20;
-      const asteroid = {
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: size,
-        speed: Math.random() * 1 + 0.5,
-        angle: Math.random() * Math.PI * 2
-      };
-      asteroids.push(asteroid);
-    }
-
-    for (let i = 0; i < 5; i++) {
-      createAsteroid();
-    }
-
-    window.addEventListener('keydown', function(e) {
-      keys[e.code] = true;
-    });
-
-    window.addEventListener('keyup', function(e) {
-      keys[e.code] = false;
-    });
-
-    function update() {
-      if (keys['ArrowLeft']) {
-        ship.angle -= 0.1;
-      }
-      if (keys['ArrowRight']) {
-        ship.angle += 0.1;
-      }
-      if (keys['ArrowUp']) {
-        ship.speed = 3;
-      } else {
-        ship.speed = 0;
-      }
-      if (keys['Space']) {
-        shootBullet();
-      }
-
-      ship.x += Math.cos(ship.angle) * ship.speed;
-      ship.y += Math.sin(ship.angle) * ship.speed;
-      if (ship.x < 0) ship.x = canvas.width;
-      if (ship.x > canvas.width) ship.x = 0;
-      if (ship.y < 0) ship.y = canvas.height;
-      if (ship.y > canvas.height) ship.y = 0;
-
-      for (let i = 0; i < ship.bullets.length; i++) {
-        const b = ship.bullets[i];
-        b.x += Math.cos(b.angle) * b.speed;
-        b.y += Math.sin(b.angle) * b.speed;
-        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
-          ship.bullets.splice(i, 1);
-          i--;
-        }
-      }
-
-      for (let i = 0; i < asteroids.length; i++) {
-        const a = asteroids[i];
-        a.x += Math.cos(a.angle) * a.speed;
-        a.y += Math.sin(a.angle) * a.speed;
-        if (a.x < 0) a.x = canvas.width;
-        if (a.x > canvas.width) a.x = 0;
-        if (a.y < 0) a.y = canvas.height;
-        if (a.y > canvas.height) a.y = 0;
-      }
-
-      for (let i = 0; i < ship.bullets.length; i++) {
-        const b = ship.bullets[i];
-        for (let j = 0; j < asteroids.length; j++) {
-          const a = asteroids[j];
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < a.radius) {
-            asteroids.splice(j, 1);
-            ship.bullets.splice(i, 1);
-            i--;
-            break;
-          }
-        }
+    // Function to render the current story node and its choices.
+    function renderNode(nodeId) {
+      const node = storyNodes[nodeId];
+      const gameDiv = document.getElementById('game');
+      gameDiv.innerHTML = "";
+      
+      // Display the node text.
+      const textPara = document.createElement('p');
+      textPara.textContent = node.text;
+      gameDiv.appendChild(textPara);
+      
+      // Create a button for each available choice.
+      if (node.choices) {
+        node.choices.forEach(choice => {
+          const button = document.createElement('button');
+          button.textContent = choice.text;
+          button.className = 'choice';
+          button.addEventListener('click', function() {
+            renderNode(choice.next);
+          });
+          gameDiv.appendChild(button);
+        });
       }
     }
 
-    let lastShotTime = 0;
-    function shootBullet() {
-      const now = Date.now();
-      if (now - lastShotTime > 300) {
-        const bullet = {
-          x: ship.x,
-          y: ship.y,
-          angle: ship.angle,
-          speed: 5,
-          radius: 2
-        };
-        ship.bullets.push(bullet);
-        lastShotTime = now;
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      ctx.save();
-      ctx.translate(ship.x, ship.y);
-      ctx.rotate(ship.angle);
-      ctx.beginPath();
-      ctx.moveTo(20, 0);
-      ctx.lineTo(-15, -15);
-      ctx.lineTo(-15, 15);
-      ctx.closePath();
-      ctx.strokeStyle = 'white';
-      ctx.stroke();
-      ctx.restore();
-
-      for (let b of ship.bullets) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'red';
-        ctx.fill();
-      }
-
-      for (let a of asteroids) {
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'gray';
-        ctx.stroke();
-      }
-    }
-
-    function gameLoop() {
-      update();
-      draw();
-      requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
+    // Start the game by rendering the starting node.
+    renderNode("start");
   </script>
 </body>
 </html>
